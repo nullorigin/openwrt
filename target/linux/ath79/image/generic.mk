@@ -1,4 +1,5 @@
 include ./common-buffalo.mk
+include ./common-nec.mk
 include ./common-netgear.mk
 include ./common-senao.mk
 include ./common-tp-link.mk
@@ -344,6 +345,16 @@ define Device/alfa-network_tube-2hq
   SUPPORTED_DEVICES += tube-2hq
 endef
 TARGET_DEVICES += alfa-network_tube-2hq
+
+define Device/alfa-network_wifi-camppro-nano-duo
+  SOC := qca9531
+  DEVICE_VENDOR := ALFA Network
+  DEVICE_MODEL := WiFi CampPro Nano Duo
+  DEVICE_PACKAGES := kmod-usb2 kmod-mt76x0u -swconfig
+  IMAGE_SIZE := 15872k
+  SUPPORTED_DEVICES += campnano-duo
+endef
+TARGET_DEVICES += alfa-network_wifi-camppro-nano-duo
 
 define Device/allnet_all-wap02860ac
   $(Device/senao_loader_okli)
@@ -797,6 +808,17 @@ define Device/comfast_cf-e314n-v2
   IMAGE_SIZE := 7936k
 endef
 TARGET_DEVICES += comfast_cf-e314n-v2
+
+define Device/comfast_cf-e355ac-v2
+  SOC := qca9531
+  DEVICE_VENDOR := COMFAST
+  DEVICE_MODEL := CF-E355AC
+  DEVICE_VARIANT := v2
+  DEVICE_PACKAGES := kmod-ath10k-ct ath10k-firmware-qca9888-ct \
+	-swconfig -uboot-envtools
+  IMAGE_SIZE := 16192k
+endef
+TARGET_DEVICES += comfast_cf-e355ac-v2
 
 define Device/comfast_cf-e375ac
   SOC := qca9563
@@ -1941,6 +1963,25 @@ define Device/kuwfi_c910
 endef
 TARGET_DEVICES += kuwfi_c910
 
+define Device/kuwfi_n650
+  $(Device/loader-okli-uimage)
+  SOC := qca9563
+  DEVICE_VENDOR := KuWFi
+  DEVICE_MODEL := N650
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca9888-ct
+  FACTORY_SIZE := 13632k
+  LOADER_FLASH_OFFS := 0x40000
+  KERNEL := kernel-bin | append-dtb | lzma | uImage lzma -M 0x4f4b4c49
+  IMAGE_SIZE := 15040k
+  IMAGES += factory.bin
+  IMAGE/factory.bin := append-kernel | pad-to $$$$(BLOCKSIZE) | \
+    append-rootfs | pad-rootfs | check-size | pad-to 13568k | \
+    append-loader-okli-uimage $(1) | pad-to 64k | check-size $$$$(FACTORY_SIZE)
+  ARTIFACTS := loader.bin
+  ARTIFACT/loader.bin := append-loader-okli-uimage $(1) | pad-to 64k
+endef
+TARGET_DEVICES += kuwfi_n650
+
 define Device/letv_lba-047-ch
   $(Device/loader-okli-uimage)
   SOC := qca9531
@@ -2059,6 +2100,36 @@ define Device/nec_wg1200cr
 	seama-seal | nec-enc 9gsiy9nzep452pad | check-size
 endef
 TARGET_DEVICES += nec_wg1200cr
+
+define Device/nec_wg1400hp
+  SOC := qca9558
+  DEVICE_MODEL := Aterm WG1400HP
+  IMAGE_SIZE := 16128k
+  NEC_FW_TYPE := H040b
+  $(Device/nec-netbsd-aterm)
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += nec_wg1400hp
+
+define Device/nec_wg1800hp
+  SOC := qca9558
+  DEVICE_MODEL := Aterm WG1800HP
+  IMAGE_SIZE := 16128k
+  NEC_FW_TYPE := H040a
+  $(Device/nec-netbsd-aterm)
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += nec_wg1800hp
+
+define Device/nec_wg1800hp2
+  SOC := qca9558
+  DEVICE_MODEL := Aterm WG1800HP2
+  IMAGE_SIZE := 16128k
+  NEC_FW_TYPE := H049
+  $(Device/nec-netbsd-aterm)
+  DEVICE_PACKAGES += kmod-ath10k-ct ath10k-firmware-qca988x-ct
+endef
+TARGET_DEVICES += nec_wg1800hp2
 
 define Device/nec_wg800hp
   SOC := qca9563
@@ -2919,6 +2990,14 @@ define Device/sophos_ap15
   IMAGE_SIZE := 15936k
 endef
 TARGET_DEVICES += sophos_ap15
+
+define Device/sophos_ap15c
+  SOC := qca9557
+  DEVICE_VENDOR := Sophos
+  DEVICE_MODEL := AP15C
+  IMAGE_SIZE := 15936k
+endef
+TARGET_DEVICES += sophos_ap15c
 
 define Device/sophos_ap55
   SOC := qca9558

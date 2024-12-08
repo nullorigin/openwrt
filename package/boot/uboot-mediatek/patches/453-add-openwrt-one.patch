@@ -149,7 +149,7 @@
 +
 +			partition@200000 {
 +				label = "ubi";
-+				reg = <0x100000 0x7f00000>;
++				reg = <0x100000 0xff00000>;
 +			};
 +		};
 +	};
@@ -469,7 +469,8 @@
 +CONFIG_LMB_MAX_REGIONS=64
 --- /dev/null
 +++ b/openwrt-one-nor_env
-@@ -0,0 +1,46 @@
+@@ -0,0 +1,48 @@
++ethaddr_factory=mtd read factory 0x46000000 0x0 0x20000 && env readmem -b ethaddr 0x4600002a 0x6 ; setenv ethaddr_factory
 +bl2_mtd_write=mtd erase bl2-nor &&  mtd write bl2-nor $loadaddr 0x0 0x40000
 +bl2_tftp_write=tftpboot $loadaddr $bootfile_bl2_nor && run bl2_mtd_write
 +bootcmd=run check_button ; run led_start ; mtd read recovery ${loadaddr} ; bootm ; run led_loop_error
@@ -509,16 +510,18 @@
 +serverip=192.168.11.23
 +tftp_boot=run led_start ; tftpboot $loadaddr $bootfile && bootm $loadaddr#$bootconf
 +tftp_write=run led_start ; tftpboot $loadaddr $bootfile && mtd erase recovery 0x0 ${filesize} && mtd write recovery $loadaddr 0x0 ${filesize}
++usb_pgood_delay=4000
 +usb_recovery=run led_start ; usb start && run usb_recovery_bl2 && run usb_recovery_ubi && run led_loop_done
 +usb_recovery_bl2=fatload usb 0:1 ${loadaddr} ${recoverfile_bl2} && run recovery_write_bl2
 +usb_recovery_ubi=fatload usb 0:1 ${loadaddr} ${recoverfile_ubi} && run recovery_write_ubi
-+_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
-+_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; bootmenu
++_firstboot=setenv _firstboot ; run ethaddr_factory ; run _switch_to_menu ; run _init_env ; bootmenu
 +_init_env=setenv _init_env ; echo Initialize Env ; run ubi_create_env ; saveenv
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
++_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"
 --- /dev/null
 +++ b/openwrt-one-spi-nand_env
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,61 @@
++ethaddr_factory=mtd read factory 0x46000000 0x0 0x20000 && env readmem -b ethaddr 0x4600002a 0x6 ; setenv ethaddr_factory
 +ipaddr=192.168.11.11
 +serverip=192.168.11.23
 +loadaddr=0x46000000
@@ -569,12 +572,13 @@
 +ubi_read_production=ubi read $loadaddr fit && iminfo $loadaddr && run ubi_prepare_rootfs
 +ubi_read_recovery=ubi check recovery && ubi read $loadaddr recovery
 +ubi_remove_rootfs=ubi check rootfs_data && ubi remove rootfs_data
++usb_pgood_delay=4000
 +usb_recover=run led_start ; usb start && run usb_recover_production && run led_loop_done
 +usb_recover_production=fatload usb 0:1 ${loadaddr} ${bootfile_upg} && iminfo $loadaddr && run ubi_write_production
 +ubi_write_fip=run ubi_remove_rootfs ; ubi check fip && ubi remove fip ; ubi create fip $filesize static && ubi write $loadaddr fip $filesize
 +ubi_write_production=ubi check fit && ubi remove fit ; run ubi_remove_rootfs ; ubi create fit $filesize dynamic && ubi write $loadaddr fit $filesize
 +ubi_write_recovery=ubi check recovery && ubi remove recovery ; run ubi_remove_rootfs ; ubi create recovery $filesize dynamic && ubi write $loadaddr recovery $filesize
 +_init_env=setenv _init_env ; run ubi_create_env ; saveenv ; saveenv
-+_firstboot=setenv _firstboot ; run _switch_to_menu ; run _init_env ; bootmenu
++_firstboot=setenv _firstboot ; run ethaddr_factory ; run _switch_to_menu ; run _init_env ; bootmenu
 +_switch_to_menu=setenv _switch_to_menu ; setenv bootdelay 3 ; setenv bootmenu_delay 3 ; setenv bootmenu_0 $bootmenu_0d ; setenv bootmenu_0d ; run _bootmenu_update_title
 +_bootmenu_update_title=setenv _bootmenu_update_title ; setenv bootmenu_title "$bootmenu_title       [33m$ver[0m"

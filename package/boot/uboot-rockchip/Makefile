@@ -5,11 +5,11 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/kernel.mk
 
-PKG_VERSION:=2024.07
+PKG_VERSION:=2024.10
 PKG_RELEASE:=1
-PKG_HASH:=f591da9ab90ef3d6b3d173766d0ddff90c4ed7330680897486117df390d83c8f
+PKG_HASH:=b28daf4ac17e43156363078bf510297584137f6df50fced9b12df34f61a92fb0
 
-PKG_MAINTAINER:=Tobias Maedel <openwrt@tbspace.de>
+PKG_MAINTAINER:=Sarah Maedel <openwrt@tbspace.de>
 
 UBOOT_USE_BINMAN:=1
 UBOOT_USE_INTREE_DTC:=1
@@ -160,6 +160,13 @@ define U-Boot/rk3566/Default
   TPL:=rk3566_ddr_1056MHz_v1.21.bin
 endef
 
+define U-Boot/nanopi-r3s-rk3566
+  $(U-Boot/rk3566/Default)
+  NAME:=NanoPi R3S
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-r3s
+endef
+
 define U-Boot/radxa-cm3-io-rk3566
   $(U-Boot/rk3566/Default)
   NAME:=CM3 IO
@@ -259,8 +266,22 @@ define U-Boot/rock5b-rk3588
     radxa_rock-5b
 endef
 
+define U-Boot/sige7-rk3588
+  $(U-Boot/rk3588/Default)
+  NAME:=Sige7
+  BUILD_DEVICES:= \
+    armsom_sige7
+endef
+
 
 # RK3588S boards
+
+define U-Boot/nanopi-r6c-rk3588s
+  $(U-Boot/rk3588/Default)
+  NAME:=NanoPi R6C
+  BUILD_DEVICES:= \
+    friendlyarm_nanopi-r6c
+endef
 
 define U-Boot/nanopi-r6s-rk3588s
   $(U-Boot/rk3588/Default)
@@ -291,6 +312,7 @@ UBOOT_TARGETS := \
   rock64-rk3328 \
   rock-pi-e-rk3328 \
   rock-pi-e-v3-rk3328 \
+  nanopi-r3s-rk3566 \
   radxa-cm3-io-rk3566 \
   radxa-zero-3-rk3566 \
   rock-3c-rk3566 \
@@ -302,6 +324,8 @@ UBOOT_TARGETS := \
   rock-3b-rk3568 \
   nanopc-t6-rk3588 \
   rock5b-rk3588 \
+  sige7-rk3588 \
+  nanopi-r6c-rk3588s \
   nanopi-r6s-rk3588s \
   rock5a-rk3588s
 
