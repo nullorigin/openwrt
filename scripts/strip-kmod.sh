@@ -22,7 +22,7 @@ if [ -z "$KEEP_BUILD_ID" ]; then
 	ARGS="$ARGS -R .note.gnu.build-id"
 fi
 
-${CROSS}objcopy \
+"${CROSS}"objcopy \
 	-R .comment \
 	-R .pdr \
 	-R .mdebug.abi32 \
@@ -30,7 +30,7 @@ ${CROSS}objcopy \
 	-R .reginfo \
 	-R .MIPS.abiflags \
 	-R .note.GNU-stack \
-	$ARGS \
+	"$ARGS" \
 	"$MODULE" "$MODULE.tmp"
 
 [ -n "$NO_RENAME" ] && {
@@ -38,7 +38,7 @@ ${CROSS}objcopy \
 	exit 0
 }
 
-${CROSS}nm "$MODULE.tmp" | awk '
+"${CROSS}"nm "$MODULE.tmp" | awk '
 BEGIN {
 	n = 0
 }
@@ -50,6 +50,6 @@ $3 && $2 ~ /[brtd]/ && $3 !~ /\$LC/ && !def[$3] {
 }
 ' > "$MODULE.tmp1"
 
-${CROSS}objcopy $(cat ${MODULE}.tmp1) ${MODULE}.tmp ${MODULE}.out
+"${CROSS}"objcopy "$(cat "${MODULE}".tmp1)" "${MODULE}".tmp "${MODULE}".out
 mv "${MODULE}.out" "${MODULE}"
 rm -f "${MODULE}".t*

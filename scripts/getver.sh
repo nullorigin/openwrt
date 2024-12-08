@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 export LANG=C
 export LC_ALL=C
-[ -n "$TOPDIR" ] && cd $TOPDIR
+[ -n "$TOPDIR" ] && cd "$TOPDIR" || exit
 
 GET_REV=$1
 
@@ -19,19 +19,19 @@ try_git() {
 
 	case "$GET_REV" in
 	r*)
-		GET_REV="$(echo $GET_REV | tr -d 'r')"
+		GET_REV="$(echo "$GET_REV" | tr -d 'r')"
 		BASE_REV="$(git rev-list ${REBOOT}..HEAD 2>/dev/null | wc -l | awk '{print $1}')"
 		[ $((BASE_REV - GET_REV)) -ge 0 ] && REV="$(git rev-parse HEAD~$((BASE_REV - GET_REV)))"
 		;;
 	*)
 		BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-		ORIGIN="$(git rev-parse --verify --symbolic-full-name ${BRANCH}@{u} 2>/dev/null)"
-		[ -n "$ORIGIN" ] || ORIGIN="$(git rev-parse --verify --symbolic-full-name main@{u} 2>/dev/null)"
-		REV="$(git rev-list ${REBOOT}..$GET_REV 2>/dev/null | wc -l | awk '{print $1}')"
+		ORIGIN="$(git rev-parse --verify --symbolic-full-name "${BRANCH}"'@{u}' 2>/dev/null)"
+		[ -n "$ORIGIN" ] || ORIGIN="$(git rev-parse --verify --symbolic-full-name 'main@{u}' 2>/dev/null)"
+		REV="$(git rev-list ${REBOOT}.."$GET_REV" 2>/dev/null | wc -l | awk '{print $1}')"
 
 		if [ -n "$ORIGIN" ]; then
-			UPSTREAM_BASE="$(git merge-base $GET_REV $ORIGIN)"
-			UPSTREAM_REV="$(git rev-list ${REBOOT}..$UPSTREAM_BASE 2>/dev/null | wc -l | awk '{print $1}')"
+			UPSTREAM_BASE="$(git merge-base "$GET_REV" "$ORIGIN")"
+			UPSTREAM_REV="$(git rev-list ${REBOOT}.."$UPSTREAM_BASE" 2>/dev/null | wc -l | awk '{print $1}')"
 		else
 			UPSTREAM_REV=0
 		fi
@@ -40,7 +40,7 @@ try_git() {
 			REV="${UPSTREAM_REV}+$((REV - UPSTREAM_REV))"
 		fi
 
-		REV="${REV:+r$REV-$(git log -n 1 --format="%h" $UPSTREAM_BASE)}"
+		REV="${REV:+r$REV-$(git log -n 1 --format="%h" "$UPSTREAM_BASE")}"
 
 		;;
 	esac

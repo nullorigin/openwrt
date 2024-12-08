@@ -4,7 +4,7 @@
 # Author: David Bauer <mail@david-bauer.net>, based on mkits-zyxel-factory.sh.
 
 usage() {
-	echo "Usage: `basename $0` output file compat-models"
+	echo "Usage: $(basename "$0") output file compat-models"
 	exit 1
 }
 
@@ -35,4 +35,4 @@ echo "\
 			};
 		};
 	};
-};" > ${OUTPUT}
+};" > "${OUTPUT}"

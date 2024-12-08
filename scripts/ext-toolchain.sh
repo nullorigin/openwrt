@@ -60,7 +60,7 @@ BIN_SPECS="
 OVERWRITE_CONFIG=""
 
 test_c() {
-	cat <<-EOT | "${CC:-false}" $CFLAGS -o /dev/null -x c - 2>/dev/null
+	cat <<-EOT | "${CC:-false}" "$CFLAGS" -o /dev/null -x c - 2>/dev/null
 		#include <stdio.h>
 
 		int main(int argc, char **argv)
@@ -72,7 +72,7 @@ test_c() {
 }
 
 test_cxx() {
-	cat <<-EOT | "${CXX:-false}" $CFLAGS -o /dev/null -x c++ - 2>/dev/null
+	cat <<-EOT | "${CXX:-false}" "$CFLAGS" -o /dev/null -x c++ - 2>/dev/null
 		#include <iostream>
 
 		using namespace std;
@@ -86,7 +86,7 @@ test_cxx() {
 }
 
 test_softfloat() {
-	cat <<-EOT | "$CC" $CFLAGS -msoft-float -o /dev/null -x c - 2>/dev/null
+	cat <<-EOT | "$CC" "$CFLAGS" -msoft-float -o /dev/null -x c - 2>/dev/null
 		int main(int argc, char **argv)
 		{
 			double a = 0.1;
@@ -98,7 +98,7 @@ test_softfloat() {
 }
 
 test_uclibc() {
-	local sysroot="$("$CC" $CFLAGS -print-sysroot 2>/dev/null)"
+	local sysroot="$("$CC" "$CFLAGS" -print-sysroot 2>/dev/null)"
 	if [ -d "${sysroot:-$TOOLCHAIN}" ]; then
 		local lib
 		for lib in "${sysroot:-$TOOLCHAIN}"/{lib,usr/lib,usr/local/lib}/ld*-uClibc*.so*; do
@@ -157,17 +157,17 @@ find_libs() {
 	if [ -n "$spec" ] && probe_cpp; then
 		local libdir libdirs
 		for libdir in $(
-			"$CPP" $CFLAGS -v -x c /dev/null 2>&1 | \
+			"$CPP" "$CFLAGS" -v -x c /dev/null 2>&1 | \
 				sed -ne 's#:# #g; s#^LIBRARY_PATH=##p'
 		); do
 			if [ -d "$libdir" ]; then
-				libdirs="$libdirs $(cd "$libdir"; pwd)/"
+				libdirs="$libdirs $(cd "$libdir" || exit; pwd)/"
 			fi
 		done
 
 		local pattern
-		for pattern in $(eval echo $spec); do
-			find $libdirs -name "$pattern.so*" | sort -u
+		for pattern in $(eval echo "$spec"); do
+			find "$libdirs" -name "$pattern.so*" | sort -u
 		done
 
 		return 0
@@ -187,17 +187,17 @@ find_bins() {
 			echo "${sysroot:-$TOOLCHAIN}/bin";
 			echo "${sysroot:-$TOOLCHAIN}/usr/bin";
 			echo "${sysroot:-$TOOLCHAIN}/usr/local/bin";
- 			"$CPP" $CFLAGS -v -x c /dev/null 2>&1 | \
+ 			"$CPP" "$CFLAGS" -v -x c /dev/null 2>&1 | \
 				sed -ne 's#:# #g; s#^COMPILER_PATH=##p'
 		); do
 			if [ -d "$bindir" ]; then
-				bindirs="$bindirs $(cd "$bindir"; pwd)/"
+				bindirs="$bindirs $(cd "$bindir" || exit; pwd)/"
 			fi
 		done
 
 		local pattern
-		for pattern in $(eval echo $spec); do
-			find $bindirs -name "$pattern" | sort -u
+		for pattern in $(eval echo "$spec"); do
+			find "$bindirs" -name "$pattern" | sort -u
 		done
 
 		return 0
@@ -207,15 +207,15 @@ find_bins() {
 }
 
 find_gcc_version() {
-	if [ -f $TOOLCHAIN/info.mk ]; then
-		GCC_VERSION=$(grep GCC_VERSION $TOOLCHAIN/info.mk | sed 's/GCC_VERSION=//')
+	if [ -f "$TOOLCHAIN"/info.mk ]; then
+		GCC_VERSION=$(grep GCC_VERSION "$TOOLCHAIN"/info.mk | sed 's/GCC_VERSION=//')
 		return 0
 	fi
 
 	echo "Warning! Can't find info.mk, trying to detect with alternative way."
 
 	# Very fragile detection
-	GCC_VERSION=$(find $TOOLCHAIN/bin | grep -oE "gcc-[0-9]+\.[0-9]+\.[0-9]+$" | \
+	GCC_VERSION=$(find "$TOOLCHAIN"/bin | grep -oE "gcc-[0-9]+\.[0-9]+\.[0-9]+$" | \
 		head -1 | sed 's/gcc-//')
 }
 
@@ -301,12 +301,12 @@ print_config() {
 	local mktarget="$1"
 	local mksubtarget
 
-	local target="$("$CC" $CFLAGS -dumpmachine)"
-	local version="$("$CC" $CFLAGS -dumpversion)"
+	local target="$("$CC" "$CFLAGS" -dumpmachine)"
+	local version="$("$CC" "$CFLAGS" -dumpversion)"
 	local cpuarch="${target%%-*}"
 
 	# get CC; strip version; strip gcc and add - suffix
-	local prefix="${CC##*/}"; prefix="${prefix%-$version}"; prefix="${prefix%-*}-"
+	local prefix="${CC##*/}"; prefix="${prefix%-"$version"}"; prefix="${prefix%-*}-"
 	local config="${0%/scripts/*}/.config"
 
 	# if no target specified, print choice list and exit
@@ -331,7 +331,7 @@ print_config() {
 
 		if [ -n "$mktargets" ]; then
 			echo "Available targets:"                               >&2
-			echo $mktargets                                         >&2
+			echo "$mktargets"                                         >&2
 		else
 			echo -e "Could not find a suitable OpenWrt target for " >&2
 			echo -e "CPU architecture '$cpuarch' - you need to "    >&2
@@ -455,7 +455,7 @@ probe_cc() {
 			local cmd
 			for cmd in "$TOOLCHAIN/$bin/"*-*cc*; do
 				if [ -x "$cmd" ] && [ ! -h "$cmd" ]; then
-					CC="$(cd "${cmd%/*}"; pwd)/${cmd##*/}"
+					CC="$(cd "${cmd%/*}" || exit; pwd)/${cmd##*/}"
 					return 0
 				fi
 			done
@@ -472,7 +472,7 @@ probe_cxx() {
 			local cmd
 			for cmd in "$TOOLCHAIN/$bin/"*-*++*; do
 				if [ -x "$cmd" ] && [ ! -h "$cmd" ]; then
-					CXX="$(cd "${cmd%/*}"; pwd)/${cmd##*/}"
+					CXX="$(cd "${cmd%/*}" || exit; pwd)/${cmd##*/}"
 					return 0
 				fi
 			done
@@ -489,7 +489,7 @@ probe_cpp() {
 			local cmd
 			for cmd in "$TOOLCHAIN/$bin/"*-cpp*; do
 				if [ -x "$cmd" ] && [ ! -h "$cmd" ]; then
-					CPP="$(cd "${cmd%/*}"; pwd)/${cmd##*/}"
+					CPP="$(cd "${cmd%/*}" || exit; pwd)/${cmd##*/}"
 					return 0
 				fi
 			done
@@ -500,8 +500,8 @@ probe_cpp() {
 }
 
 probe_libc() {
-	if [ -f $TOOLCHAIN/info.mk ]; then
-		LIBC_TYPE=$(grep LIBC_TYPE $TOOLCHAIN/info.mk | sed 's/LIBC_TYPE=//')
+	if [ -f "$TOOLCHAIN"/info.mk ]; then
+		LIBC_TYPE=$(grep LIBC_TYPE "$TOOLCHAIN"/info.mk | sed 's/LIBC_TYPE=//')
 		return 0
 	fi
 
@@ -526,7 +526,7 @@ while [ -n "$1" ]; do
 				echo "Toolchain directory '$1' does not exist." >&2
 				exit 1
 			}
-			TOOLCHAIN="$(cd "$1"; pwd)"; shift
+			TOOLCHAIN="$(cd "$1" || exit; pwd)"; shift
 		;;
 
 		--cflags)
@@ -545,7 +545,7 @@ while [ -n "$1" ]; do
 
 		--print-target)
 			if probe_cc; then
-				exec "$CC" $CFLAGS -dumpmachine
+				exec "$CC" "$CFLAGS" -dumpmachine
 			fi
 			echo "No C compiler found in '$TOOLCHAIN'." >&2
 			exit 1

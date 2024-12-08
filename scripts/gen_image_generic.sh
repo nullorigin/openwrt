@@ -21,7 +21,7 @@ head=16
 sect=63
 
 # create partition table
-set $(ptgen -o "$OUTPUT" -h $head -s $sect ${GUID:+-g} -t "${KERNELPARTTYPE}" -p "${KERNELSIZE}m${PARTOFFSET:+@$PARTOFFSET}" -t "${ROOTFSPARTTYPE}" -p "${ROOTFSSIZE}m" ${ALIGN:+-l $ALIGN} ${SIGNATURE:+-S 0x$SIGNATURE} ${GUID:+-G $GUID})
+set "$(ptgen -o "$OUTPUT" -h $head -s $sect ${GUID:+-g} -t "${KERNELPARTTYPE}" -p "${KERNELSIZE}m${PARTOFFSET:+@$PARTOFFSET}" -t "${ROOTFSPARTTYPE}" -p "${ROOTFSSIZE}m" ${ALIGN:+-l $ALIGN} ${SIGNATURE:+-S 0x$SIGNATURE} ${GUID:+-G $GUID})"
 
 KERNELOFFSET="$(($1 / 512))"
 KERNELSIZE="$2"
@@ -33,8 +33,8 @@ ROOTFSSIZE="$(($4 / 512))"
 # breaks reproducibility.
 # Implement recursive copy with reproducible order.
 dos_dircopy() {
-  local entry
-  local baseentry
+  entry=
+  baseentry=
   for entry in "$1"/* ; do
     if [ -f "$entry" ]; then
       mcopy -i "$OUTPUT.kernel" "$entry" ::"$2"

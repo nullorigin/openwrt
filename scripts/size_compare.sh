@@ -1,4 +1,5 @@
-# SPDX-License-Identifier: GPL-2.0-or-later
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later``
 #
 # Copyright (C) 2020 Paul Spooren <mail@aparcar.org>
 #
@@ -39,7 +40,6 @@ BASE_URL="${BASE_URL:-https://downloads.openwrt.org/snapshots}"
 CHECK_INSTALLED="${CHECK_INSTALLED:-y}"
 
 TARGET_URL="$BASE_URL/targets/$TARGET/$SUBTARGET/packages/Packages.gz"
-CONFIG_URL="$BASE_URL/targets/$TARGET/$SUBTARGET/config.buildinfo"
 PACKAGES_URL="$BASE_URL/packages/$ARCH/base/Packages.gz"
 
 if command -v curl > /dev/null; then
@@ -52,59 +52,31 @@ help() {
     sed -rn 's/^### ?//;T;p' "$0"
 }
 
-package_size () {
-	FOUND_PACKAGE=
-	if [ -z "$CHECK_INSTALLED" ]; then
-		SEARCH_PATTERN="Size"
-	else
-		SEARCH_PATTERN="Installed-Size"
-	fi
-	while IFS= read -r line; do
-		if [ "$line" = "Package: $2" ]; then
-			FOUND_PACKAGE=y
-		fi
-		if [ -n "$FOUND_PACKAGE" ]; then
-			case $line in
-				"$SEARCH_PATTERN"*)
-					echo "$line" | cut -d ' ' -f 2
-					break
-					;;
-			esac
-		fi
-	done < "$1"
-}
-
 compare_sizes () {
-	TOTAL_DIFF="0"
-	for PACKAGE in $PACKAGES; do
-		if [ "$PACKAGE" = "libc" ]; then
+	tmp_index="$(mktemp "/tmp/size_compare_package_index.XXXXXX")"
+	{
+		"$DOWNLOAD_METHOD" "$TARGET_URL" | gzip -d
+		"$DOWNLOAD_METHOD" "$PACKAGES_URL" | gzip -d
+	} >> "$tmp_index" || exit 1
+	for package in $PACKAGES; do
+		if [ "$package" = "libc" ]; then
 			continue
 		fi
-		PACKAGE_FILE=$(find "$BIN_DIR/packages/$ARCH/" \
+		package_file=$(find "$BIN_DIR/packages/$ARCH/" \
 			"$BIN_DIR/targets/$TARGET/$SUBTARGET/" \
-			-name "${PACKAGE}_*.ipk" 2>/dev/null | head -n1)
-
-		if [ -z "$PACKAGE_FILE" ]; then
-			continue
-		fi
+			-name "${package}_*.ipk" 2>/dev/null | head -n1)
+		[ -z "$package_file" ] && continue
+		size_local=$(du -b "$package_file" | cut -f1)
 		if [ -z "$CHECK_INSTALLED" ]; then
-			SIZE_LOCAL=$(stat -c '%s' "$PACKAGE_FILE")
+			size_local=$(stat -c '%s' "$package_file")
 		else
-			SIZE_LOCAL=$(tar tzvf "$PACKAGE_FILE" ./data.tar.gz | awk '{ print $3 }')
+			size_local=$(tar tzvf "$package_file" ./data.tar.gz | awk '{ print $3 }')
 		fi
-		SIZE_UPSTREAM=$(package_size "$TMP_INDEX" "$PACKAGE")
-		SIZE_DIFF="$((SIZE_LOCAL - SIZE_UPSTREAM))"
-		TOTAL_DIFF="$((TOTAL_DIFF + SIZE_DIFF))"
-		if [ "$SIZE_DIFF" -gt 0 ]; then
-			SIZE_DIFF="+$SIZE_DIFF"
-		fi
-		if [ -n "$SIZE_UPSTREAM" ]; then
-			echo "${SIZE_DIFF}	${SIZE_LOCAL}	${SIZE_UPSTREAM}	$PACKAGE"
-		else
-			echo "$PACKAGE is missing upstream"
-		fi
+		size_upstream=$(grep -A 1 "Package: $package" "$tmp_index" | grep "Size" | cut -d ' ' -f 2)
+		size_diff=$((size_local - size_upstream))
+		printf '%s\t%s\t%s\t%s\n' "${size_diff}" "${size_local}" "${size_upstream}" "$package"
 	done
-	echo "~~~~~~~	total change	${TOTAL_DIFF}"
+	rm "$tmp_index"
 }
 
 if [ "$1" = "-h" ]; then
@@ -125,7 +97,7 @@ TMP_CONFIG=$(mktemp /tmp/config.XXXXXX)
 sed -n 's/^	\+config \(.*\)/\1/p' config/Config-build.in config/Config-devel.in > "${TMP_CONFIG}-FOCUS"
 sort .config | grep -f "${TMP_CONFIG}-FOCUS" | grep -v "^#" | sort > "${TMP_CONFIG}-LOCAL"
 mv .config .config.bak
-"$DOWNLOAD_METHOD" "$CONFIG_URL" > .config
+"$DOWNLOAD_METHOD" "$BASE_URL/targets/$TARGET/$SUBTARGET/config.buildinfo" > .config
 make defconfig > /dev/null 2> /dev/null
 grep -f "${TMP_CONFIG}-FOCUS" .config | grep -v "^#" | sort > "${TMP_CONFIG}-UPSTREAM"
 mv .config.bak .config
@@ -135,7 +107,6 @@ echo " --- start config diff ---"
 diff -u "${TMP_CONFIG}-LOCAL" "${TMP_CONFIG}-UPSTREAM"
 echo " --- end config diff ---"
 rm "${TMP_CONFIG}-FOCUS" "${TMP_CONFIG}-UPSTREAM" "${TMP_CONFIG}-LOCAL"
-echo
 
 if [ -z "$CHECK_INSTALLED" ]; then
 	echo "Checking IPK package size"
@@ -144,14 +115,4 @@ else
 fi
 echo
 
-echo "Fetching latest package indexes..."
-TMP_INDEX=$(mktemp /tmp/size_compare_package_index.XXXXXX)
-"$DOWNLOAD_METHOD" "$TARGET_URL" | gzip -d > "$TMP_INDEX" || exit 1
-"$DOWNLOAD_METHOD" "$PACKAGES_URL" | gzip -d >> "$TMP_INDEX" || exit 1
-echo
-
-echo "Comparing package sizes..."
-echo "Change 	Local	Remote 	Package"
-compare_sizes | sort -g -r
-
-rm "$TMP_INDEX"
+compare_sizes

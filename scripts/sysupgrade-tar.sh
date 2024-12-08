@@ -1,6 +1,9 @@
 #!/bin/sh
 
-. $TOPDIR/scripts/functions.sh
+. "$TOPDIR"/scripts/functions.sh || {
+	echo "Error: Could not source $TOPDIR/scripts/functions.sh" >&2
+	exit 1
+}
 
 board=""
 kernel=""
@@ -38,7 +41,7 @@ while [ "$1" ]; do
 	esac
 done
 
-if [ ! -n "$board" -o ! -r "$kernel" -a  ! -r "$rootfs" -o ! "$outfile" ]; then
+if { [ -z "$board" ] || [ ! -r "$kernel" ]; } && { [ ! -r "$rootfs" ] || [ ! -r "$outfile" ]; }; then
 	echo "syntax: $0 [--board boardname] [--kernel kernelimage] [--rootfs rootfs] out"
 	exit 1
 fi
@@ -56,7 +59,7 @@ fi
 mkdir -p "${tmpdir}/sysupgrade-${board}"
 echo "BOARD=${board}" > "${tmpdir}/sysupgrade-${board}/CONTROL"
 if [ -n "${rootfs}" ]; then
-	case "$( get_fs_type ${rootfs} )" in
+	case "$( get_fs_type "${rootfs}" )" in
 	"squashfs")
 		dd if="${rootfs}" of="${tmpdir}/sysupgrade-${board}/root" bs=1024 conv=sync
 		;;
@@ -72,7 +75,7 @@ if [ -n "$SOURCE_DATE_EPOCH" ]; then
 	mtime="--mtime=@${SOURCE_DATE_EPOCH}"
 fi
 
-(cd "$tmpdir"; tar --sort=name --owner=0 --group=0 --numeric-owner -cvf sysupgrade.tar sysupgrade-${board} ${mtime})
+(cd "$tmpdir" || exit; tar --sort=name --owner=0 --group=0 --numeric-owner -cvf sysupgrade.tar sysupgrade-"${board}" "${mtime}")
 err="$?"
 if [ -e "$tmpdir/sysupgrade.tar" ]; then
 	cp "$tmpdir/sysupgrade.tar" "$outfile"

@@ -1,7 +1,9 @@
 #!/bin/sh
 
-. $TOPDIR/scripts/functions.sh
-
+. "$TOPDIR"/scripts/functions.sh || {
+	echo "Error: Could not source $TOPDIR/scripts/functions.sh" >&2
+	exit 1
+}
 part=""
 ubootenv=""
 ubinize_param=""
@@ -12,12 +14,12 @@ err=""
 ubinize_seq=""
 
 ubivol() {
-	local volid="$1"
-	local name="$2"
-	local image="$3"
-	local autoresize="$4"
-	local size="$5"
-	local voltype="${6:-dynamic}"
+	volid="$1"
+	name="$2"
+	image="$3"
+	autoresize="$4"
+	size="$5"
+	voltype="${6:-dynamic}"
 	echo "[$name]"
 	echo "mode=ubi"
 	echo "vol_id=$volid"
@@ -35,12 +37,11 @@ ubivol() {
 }
 
 ubilayout() {
-	local vol_id=0
-	local rootsize
-	local autoresize
-	local rootfs_type
-	local voltype
-
+	vol_id=0
+	rootsize=
+	autoresize=
+	rootfs_type=
+	voltype=
 	rootfs_type="$( get_fs_type "$2" )"
 	if [ "$1" = "ubootenv" ]; then
 		ubivol $vol_id ubootenv
@@ -162,7 +163,7 @@ ubilayout "$ubootenv" "$rootfs" "$kernel" > "$ubinizecfg"
 
 set_ubinize_seq
 cat "$ubinizecfg"
-ubinize $ubinize_seq -o "$outfile" $ubinize_param "$ubinizecfg"
+ubinize "$ubinize_seq" -o "$outfile" "$ubinize_param" "$ubinizecfg"
 err="$?"
 [ ! -e "$outfile" ] && err=2
 rm "$ubinizecfg"

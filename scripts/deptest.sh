@@ -52,7 +52,7 @@ deptest_make()
 	shift
 	local logfile="$1"
 	shift
-	make -j$nrjobs "$target" \
+	make -j"$nrjobs" "$target" \
 		BUILD_DIR="$BUILD_DIR" \
 		BUILD_DIR_HOST="$BUILD_DIR_HOST" \
 		KERNEL_BUILD_DIR="$KERNEL_BUILD_DIR" \
@@ -69,7 +69,7 @@ clean_kernel_build_dir()
 	(
 		cd "$KERNEL_BUILD_DIR" || die "Failed to enter kernel build dir"
 		for entry in *; do
-			[ -z "$(echo "$entry" | egrep -e '^linux-*.*.*$')" ] || continue
+			[ -z "$(echo "$entry" | grep -E '^linux-*.*.*$')" ] || continue
 			rm -rf "$entry" || die "Failed to clean kernel build dir"
 		done
 	)
@@ -77,16 +77,16 @@ clean_kernel_build_dir()
 
 stamp_exists() # $1=stamp
 {
-	[ -e "$1" -o -L "$1" ]
+	[ -e "$1" ] || [ -L "$1" ]
 }
 
 test_package() # $1=pkgname
 {
 	local pkg="$1"
-	[ -n "$pkg" -a -z "$(echo "$pkg" | grep -e '/')" -a "$pkg" != "." -a "$pkg" != ".." ] || \
+	{ [ -n "$pkg" ] && [ -z "$(echo "$pkg" | grep -e '/')" ] && [ "$pkg" != "." ] && [ "$pkg" != ".." ]; } || \
 		die "Package name \"$pkg\" contains illegal characters"
 	local SELECTED=
-	for conf in `grep CONFIG_PACKAGE tmp/.packagedeps | grep -E "[ /]$pkg\$" | sed -e 's,package-$(\(CONFIG_PACKAGE_.*\)).*,\1,'`; do
+	for conf in $(grep CONFIG_PACKAGE tmp/.packagedeps | grep -E "[ /]$pkg\$" | sed -e 's,package-$(\(CONFIG_PACKAGE_.*\)).*,\1,'); do
 		grep "$conf=" .config > /dev/null && SELECTED=1 && break
 	done
 	local STAMP_SUCCESS="$STAMP_DIR_SUCCESS/$pkg"
@@ -112,12 +112,12 @@ test_package() # $1=pkgname
 		clean_kernel_build_dir
 	}
 	mkdir -p "$BUILD_DIR" "$BUILD_DIR_HOST"
-	local logfile="$(basename $pkg).log"
+	local logfile="$(basename "$pkg").log"
 	deptest_make "package/$pkg/compile" "$logfile"
 	if [ $? -eq 0 ]; then
-		( cd "$STAMP_DIR_SUCCESS"; ln -s "../$LOG_DIR_NAME/$logfile" "./$pkg" )
+		( cd "$STAMP_DIR_SUCCESS" || exit; ln -s "../$LOG_DIR_NAME/$logfile" "./$pkg" )
 	else
-		( cd "$STAMP_DIR_FAILED"; ln -s "../$LOG_DIR_NAME/$logfile" "./$pkg" )
+		( cd "$STAMP_DIR_FAILED" || exit; ln -s "../$LOG_DIR_NAME/$logfile" "./$pkg" )
 		echo "Building package $pkg FAILED"
 	fi
 }
@@ -179,7 +179,7 @@ bootstrap_native_make()
 	shift
 	local logfile="bootstrap-native-$(echo "$target" | tr / -).log"
 	echo "make $target"
-	make -j$nrjobs "$target" \
+	make -j"$nrjobs" "$target" \
 		V=99 "$@" >"$LOG_DIR/$logfile" 2>&1 || \
 		die "make $target failed, please check $logfile"
 }
@@ -200,7 +200,7 @@ bootstrap_native_make()
 
 if [ -z "$packages" ]; then
 	# iterate over all packages
-	for pkg in `cat tmp/.packagedeps  | grep CONFIG_PACKAGE | grep -v curdir | sed -e 's,.*[/=]\s*,,' | sort -u`; do
+	for pkg in $(cat tmp/.packagedeps  | grep CONFIG_PACKAGE | grep -v curdir | sed -e 's,.*[/=]\s*,,' | sort -u); do
 		test_package "$pkg"
 	done
 else
