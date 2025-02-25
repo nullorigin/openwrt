@@ -16,7 +16,7 @@ let wireless_status = ubus.call('network.wireless', 'status');
 
 function find_phy(wiphy) {
 	for (let k,  phy in phys)
-		if (phy.wiphy == wiphy)
+		if (phy && phy.wiphy == wiphy)
 			return phy;
 	return null;
 }
@@ -311,16 +311,16 @@ export function assoclist(dev) {
 			snr: station.sta_info.signal_avg - ifaces[dev].noise,
 			inactive_time: station.sta_info.inactive_time,
 			rx: {
-				bitrate: format_rate(station.sta_info.rx_bitrate.bitrate),
-				bitrate_raw: station.sta_info.rx_bitrate.bitrate,
-				packets: station.sta_info.rx_packets,
-				flags: assoc_flags(station.sta_info.rx_bitrate),
+				bitrate: format_rate(station.sta_info.rx_bitrate?.bitrate ?? 0),
+				bitrate_raw: station.sta_info.rx_bitrate?.bitrate ?? 0,
+				packets: station.sta_info.rx_packets ?? 0,
+				flags: assoc_flags(station.sta_info.rx_bitrate ?? {}),
 			},
 			tx: {
-				bitrate: format_rate(station.sta_info.tx_bitrate.bitrate),
-				bitrate_raw: station.sta_info.tx_bitrate.bitrate,
-				packets: station.sta_info.tx_packets,
-				flags: assoc_flags(station.sta_info.tx_bitrate),
+				bitrate: format_rate(station.sta_info.tx_bitrate?.bitrate ?? 0),
+				bitrate_raw: station.sta_info.tx_bitrate?.bitrate ?? 0,
+				packets: station.sta_info.tx_packets ?? 0,
+				flags: assoc_flags(station.sta_info.tx_bitrate ?? {}),
 			},
 			expected_throughput: station.sta_info.expected_throughput ?? 'unknown',
 		};

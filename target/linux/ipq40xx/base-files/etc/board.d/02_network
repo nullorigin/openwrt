@@ -84,6 +84,7 @@ ipq40xx_setup_interfaces()
 		;;
 	glinet,gl-a1300|\
 	glinet,gl-b1300|\
+	glinet,gl-s1300|\
 	mobipromo,cm520-79f)
 		ucidef_set_interfaces_lan_wan "lan1 lan2" "wan"
 		;;
@@ -201,6 +202,9 @@ ipq40xx_setup_macs()
 	engenius,ens620ext)
 		wan_mac=$(mtd_get_mac_ascii u-boot-env ethaddr)
 		lan_mac=$(macaddr_add "$wan_mac" 1)
+		;;
+	extreme-networks,ws-ap3915i)
+		label_mac="$(mtd_get_mac_ascii CFG1 ethaddr)"
 		;;
 	ezviz,cs-w3-wd1200g-eup)
 		label_mac=$(mtd_get_mac_binary "ART" 0x6)
