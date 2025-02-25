@@ -2,7 +2,7 @@
 
 BLKSZ=65536
 
-[ -f "$1" -a -f "$2" ] || {
+{ [ -f "$1" ] && [ -f "$2" ]; } || {
 	echo "Usage: $0 <kernel image> <rootfs image> [output file]"
 	exit 1
 }
@@ -25,10 +25,10 @@ md5=$(cat "$kern" "$root" | $MKHASH md5)
 #  <rootfs length>  length of rootfs encoded as zero padded 8 digit hex
 #  <md5sum>         checksum of the combined kernel and rootfs image
 ( printf "CI%08x%08x%32s" \
-	$(stat -c "%s" "$kern") $(stat -c "%s" "$root") "${md5%% *}" | \
+	"$(stat -c "%s" "$kern")" "$(stat -c "%s" "$root")" "${md5%% *}" | \
 	dd bs=$BLKSZ conv=sync;
   cat "$kern" "$root"
-) > ${IMAGE} 2>/dev/null
+) > "${IMAGE}" 2>/dev/null
 
 # Clean up.
 rm -f "$kern" "$root"

@@ -6,6 +6,6 @@ case $PATH in
 	(*[!:]:) PATH="$PATH:" ;;
 esac
 
-for ELEMENT in $(echo $PATH | tr ":" "\n"); do
+for ELEMENT in $(echo "$PATH" | tr ":" "\n"); do
         PATH=$ELEMENT command -v "$@"
 done

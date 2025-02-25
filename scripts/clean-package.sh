@@ -1,25 +1,18 @@
 #!/usr/bin/env bash
-IFS=$'\n'
-[ -n "$1" -a -n "$2" ] || {
+
+INPUT_FILE="$1"
+TARGET_DIR="$2"
+
+if [ -z "$INPUT_FILE" ] || [ -z "$TARGET_DIR" ]; then
 	echo "Usage: $0 <file> <directory>"
 	exit 1
-}
-[ -f "$1" -a -d "$2" ] || {
+fi
+
+if [ ! -f "$INPUT_FILE" ] || [ ! -d "$TARGET_DIR" ]; then
 	echo "File/directory not found"
 	exit 1
-}
-cat "$1" | (
-	cd "$2"
-	while read entry; do
-		[ -n "$entry" ] || break
-		[ ! -d "$entry" ] || [ -L "$entry" ] && rm -f "$entry"
-	done
-)
-sort -r "$1" | (
-	cd "$2"
-	while read entry; do
-		[ -n "$entry" ] || break
-		[ -d "$entry" ] && rmdir "$entry" > /dev/null 2>&1
-	done
-)
-true
+fi
+
+cd "$TARGET_DIR" || exit
+xargs -r -0 rm -f < "$INPUT_FILE"
+xargs -r -0 rmdir < "$INPUT_FILE"

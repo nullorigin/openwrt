@@ -14,7 +14,7 @@ extract_prebuilt_tar() {
 
 refresh_prebuilt_tools() {
 	if [ ! -d "$HOST_BUILD_DIR" ]; then
-		echo "Can't find Host Build Dir "$HOST_BUILD_DIR"" >&2
+		echo "Can't find Host Build Dir ""$HOST_BUILD_DIR""" >&2
 		exit 1
 	fi
 
@@ -22,7 +22,7 @@ refresh_prebuilt_tools() {
 	sleep 1
 
 	if [ ! -d "$HOST_STAGING_DIR_STAMP" ]; then
-		echo "Can't find Host Staging Dir Stamp "$HOST_STAGING_DIR_STAMP"" >&2
+		echo "Can't find Host Staging Dir Stamp ""$HOST_STAGING_DIR_STAMP""" >&2
 		exit 1
 	fi
 
@@ -47,7 +47,7 @@ while [ -n "$1" ]; do
 				echo "Directory '$1' does not exist." >&2
 				exit 1
 			}
-			HOST_BUILD_DIR="$(cd "$1"; pwd)"; shift
+			HOST_BUILD_DIR="$(cd "$1" || exit; pwd)"; shift
 		;;
 
 		--host-staging-dir-stamp)
@@ -55,7 +55,7 @@ while [ -n "$1" ]; do
 				echo "Directory '$1' does not exist." >&2
 				exit 1
 			}
-			HOST_STAGING_DIR_STAMP="$(cd "$1"; pwd)"; shift
+			HOST_STAGING_DIR_STAMP="$(cd "$1" || exit; pwd)"; shift
 		;;
 
 		--tools)

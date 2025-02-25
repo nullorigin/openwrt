@@ -49,8 +49,8 @@ _ln() {
 }
 
 _relpath() {
-	local base="$(readlink -f "$1")"
-	local dest="$(readlink -f "$2")"
+	base="$(readlink -f "$1")"
+	dest="$(readlink -f "$2")"
 	local up
 
 	[ -d "$base" ] || base="${base%/*}"
@@ -59,7 +59,7 @@ _relpath() {
 	while true; do
 		case "$base"
 			in "$dest"/*)
-				echo "$up/${base#$dest/}"
+				echo "$up/${base#"$dest"/}"
 				break
 			;;
 			*)
@@ -147,10 +147,10 @@ for LDD in ${PATH//://ldd }/ldd; do
 	LDD=""
 done
 
-[ -n "$LDD" -a -x "$LDD" ] || LDD=
+{ [ -n "$LDD" ] && [ -x "$LDD" ]; } || LDD=
 
 for BIN in "$@"; do
-	[ -n "$BIN" -a -n "$DIR" ] || {
+	{ [ -n "$BIN" ] && [ -n "$DIR" ]; } || {
 		echo "Usage: $0 <destdir> <executable> ..." >&2
 		exit 1
 	}
@@ -177,7 +177,7 @@ for BIN in "$@"; do
 					*/ld-*.so*) LDSO="${token##*/}" ;;
 				esac
 
-				[ -f "$token" -a ! -f "$dest" ] && {
+				[ -f "$token" ] && [ ! -f "$dest" ] && {
 					_md "$ddir"
 					_cp "$token" "$dest"
 					case "$token" in

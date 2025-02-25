@@ -9,7 +9,7 @@
 # Write image header followed by all specified files
 # The header is padded to 64k, format is:
 #  CE               magic word ("Combined Extended Image") (2 bytes)
-#  <CE_VERSION>     file format version field (2 bytes) 
+#  <CE_VERSION>     file format version field (2 bytes)
 #  <TYPE>           short description of the target device (32 bytes)
 #  <NUM FILES>      number of files following the header (2 byte)
 #  <file1_name>     name of the first file (32 bytes)
@@ -20,7 +20,7 @@
 #  <fileN_md5>      md5 checksum of the Nth file (32 bytes)
 
 ## version history
-# * version 1: initial file format with num files / name / length / md5 checksum 
+# * version 1: initial file format with num files / name / length / md5 checksum
 
 set -e
 
@@ -50,7 +50,7 @@ if [ -z "$tmpdir" ]; then
 	exit 1
 fi
 
-trap "rm -rf $tmpdir" EXIT
+trap 'rm -rf $tmpdir' EXIT
 
 IMG_TMP_OUT="${tmpdir}/out"
 
@@ -64,7 +64,7 @@ while [ "$#" -gt 1 ]
       [ ! -f "$file" ] && echo "$ME: Not a valid file: $file" && usage
       FILES="$FILES $file"
       md5=$($MKHASH md5 "$file")
-      printf "%-32s%08x%32s" "$filename" $(stat -c "%s" "$file") "${md5%% *}" >> "${IMG_TMP_OUT}"
+      printf "%-32s%08x%32s" "$filename" "$(stat -c "%s" "$file")" "${md5%% *}" >> "${IMG_TMP_OUT}"
       shift 2
    done
 
@@ -74,5 +74,5 @@ mv "${IMG_TMP_OUT}" "${IMG_TMP_OUT}".tmp
 dd if="${IMG_TMP_OUT}.tmp" of="${IMG_TMP_OUT}" bs=65536 conv=sync 2>/dev/null
 rm "${IMG_TMP_OUT}".tmp
 
-cat $FILES >> "${IMG_TMP_OUT}"
+cat "$FILES" >> "${IMG_TMP_OUT}"
 cp "${IMG_TMP_OUT}" "${IMG_OUT}"

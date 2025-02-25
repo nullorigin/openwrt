@@ -26,7 +26,7 @@
 # The check script that verifies if the images matches the hardware model
 gen_imagecheck() {
 	echo '#!/bin/sh'
-	echo 'if [ "$1" = "'${1}'" ]; then'
+	echo 'if [ "$1" = "'"${1}"'" ]; then'
 	echo 'echo 0'
 	echo 'else'
 	echo 'echo 1'
@@ -76,19 +76,19 @@ gen_nand_upgrade() {
 
 tmpdir="$( mktemp -d 2> /dev/null )"
 imgdir=$tmpdir/image
-mkdir $imgdir
+mkdir "$imgdir"
 
-gen_imagecheck $3 > $imgdir/iss_imagecheck.sh
-gen_nor_upgrade > $imgdir/iss_imageupgrade.sh
-gen_nand_upgrade > $imgdir/iss_nand_imageupgrade.sh
-gen_fwinfo > $imgdir/firmware_information.txt
+gen_imagecheck $3 > "$imgdir"/iss_imagecheck.sh
+gen_nor_upgrade > "$imgdir"/iss_imageupgrade.sh
+gen_nand_upgrade > "$imgdir"/iss_nand_imageupgrade.sh
+gen_fwinfo > "$imgdir"/firmware_information.txt
 
-chmod +x $imgdir/iss_imagecheck.sh
-chmod +x $imgdir/iss_imageupgrade.sh
-chmod +x $imgdir/iss_nand_imageupgrade.sh
+chmod +x "$imgdir"/iss_imagecheck.sh
+chmod +x "$imgdir"/iss_imageupgrade.sh
+chmod +x "$imgdir"/iss_nand_imageupgrade.sh
 
-cp $1 $imgdir/series_vmlinux.bix
+cp $1 "$imgdir"/series_vmlinux.bix
 
-tar cf $2 -C $tmpdir image/
+tar cf "$2" -C "$tmpdir" image/
 
-rm -rf $tmpdir
+rm -rf "$tmpdir"

@@ -15,7 +15,7 @@
 #
 
 usage() {
-	echo "Usage: `basename $0` output img0_name img0_file [[img1_name img1_file] ...]"
+	echo "Usage: $(basename "$0") output img0_name img0_file [[img1_name img1_file] ...]"
 	exit 1
 }
 
@@ -33,9 +33,9 @@ echo "\
 	description = \"OpenWrt factory image\";
 	#address-cells = <1>;
 
-	images {" > ${OUTPUT}
+	images {" > "${OUTPUT}"
 
-while [ -n "$1" -a -n "$2" ]; do
+while [ -n "$1" ] && [ -n "$2" ]; do
 	[ -f "$2" ] || usage
 
 	name="$1"; shift
@@ -51,9 +51,9 @@ while [ -n "$1" -a -n "$2" ]; do
 			hash@1 {
 				algo = \"crc32\";
 			};
-		};" >> ${OUTPUT}
+		};" >> "${OUTPUT}"
 done
 
 echo \
 "	};
-};" >> ${OUTPUT}
+};" >> "${OUTPUT}"
